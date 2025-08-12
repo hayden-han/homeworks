@@ -4,13 +4,17 @@ import io.hhplus.tdd.database.UserPointTable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
 class UserPointServiceUnitTest {
     /**
-     * UserPointTable의 구현을 보니 저장되지않은 회원의 경우 id와 point가 0인 UserPoint를 반환하는 것을 확인.
-     * 의도한 시나리오라고 생각되어 검증하는 테스트를 작성.
+     * UserPointService의 getUserPoint 메서드에 대한 테스트들
+     * - 테이블에 존재하지않는 유저의 경우 포인트를 조회하면 0포인트가 조회된다.
+     * - 테이블에 존재하는 유저의 경우 포인트를 조회할때 저장된 값이 반환된다.
      */
     @Test
     @DisplayName("테이블에 존재하지않는 유저의 경우 포인트를 조회하면 0포인트가 조회된다")
@@ -56,5 +60,82 @@ class UserPointServiceUnitTest {
         assertThat(userPoint.id).isEqualTo(2L)
         assertThat(userPoint.point).isEqualTo(100L)
         assertThat(userPoint.updateMillis).isEqualTo(10000L)
+    }
+
+    /**
+     * UserPointService의 chargeUserPoint 메서드에 대한 테스트들
+     * - 테이블에 존재하는 유저의 경우 포인트를 충전하면 기존 포인트에 충전된 포인트가 더해진다.
+     * - 테이블에 존재하지않는 유저의 경우 포인트를 충전하면 충전한 포인트만 저장된다.
+     * - 0 이하의 포인트를 충전하는 경우 IllegalArgumentException이 발생한다.
+     */
+    @Test
+    @DisplayName("테이블에 존재하는 유저의 경우 포인트를 충전하면 기존 포인트에 충전된 포인트가 더해진다.")
+    fun chargeExistingUserPoint() {
+        // given
+        val stubUser = UserPoint(
+            id = 3L,
+            point = 1L,
+            updateMillis = 10000L,
+        )
+        val mockUserPointTable = mock<UserPointTable>()
+        val userPointService = UserPointService(mockUserPointTable)
+
+        `when`(
+            mockUserPointTable.selectById(3L)
+        ).thenReturn(stubUser)
+        `when`(
+            mockUserPointTable.insertOrUpdate(3L, 4L)
+        ).thenReturn(UserPoint(3L, 4L, 20000L))
+
+        // when
+        val userPoint = userPointService.chargeUserPoint(3L, 3L)
+
+        // then
+        assertThat(userPoint.id).isEqualTo(3L)
+        assertThat(userPoint.point).isEqualTo(4L)
+        assertThat(userPoint.updateMillis).isEqualTo(20000L)
+    }
+
+    @Test
+    @DisplayName("테이블에 존재하지않는 유저의 경우 포인트를 충전하면 충전한 포인트만 저장된다")
+    fun chargeNotExistingUserPoint() {
+        // given
+        val mockUserPointTable = mock<UserPointTable>()
+        val userPointService = UserPointService(mockUserPointTable)
+
+        `when`(
+            mockUserPointTable.selectById(4L)
+        ).thenReturn(UserPoint(4L, 0L, 10000L))
+        `when`(
+            mockUserPointTable.insertOrUpdate(4L, 999L)
+        ).thenReturn(UserPoint(4L, 999L, 20000L))
+
+        // when
+        val userPoint = userPointService.chargeUserPoint(4L, 999L)
+
+        // then
+        assertThat(userPoint.id).isEqualTo(4L)
+        assertThat(userPoint.point).isEqualTo(999L)
+        assertThat(userPoint.updateMillis).isEqualTo(20000L)
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = [0, -1, -100, -999, Long.MIN_VALUE])
+    @DisplayName("0 이하의 포인트를 충전하는 경우 IllegalArgumentException이 발생한다")
+    fun chargeZeroPoint(amount: Long) {
+        // given
+        val mockUserPointTable = mock<UserPointTable>()
+        val userPointService = UserPointService(mockUserPointTable)
+        `when`(
+            mockUserPointTable.selectById(5L)
+        ).thenReturn(UserPoint(5L, 0L, 10000L))
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            userPointService.chargeUserPoint(5L, amount)
+        }
+
+        // then
+        assertThat(exception).message().isEqualTo("충전할 포인트는 양의 정수여야 합니다.")
     }
 }
