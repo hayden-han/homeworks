@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point
 
+import io.hhplus.tdd.database.PointHistoryTable
 import io.hhplus.tdd.database.UserPointTable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
@@ -7,8 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 
 class UserPointServiceUnitTest {
     /**
@@ -21,7 +21,8 @@ class UserPointServiceUnitTest {
     fun getNoUserPoint() {
         // given
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
             mockUserPointTable.selectById(1L)
         ).thenReturn(UserPoint(id = 1L, point = 0L, updateMillis = 2000L))
@@ -47,7 +48,8 @@ class UserPointServiceUnitTest {
             updateMillis = 10000L,
         )
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
 
         `when`(
             mockUserPointTable.selectById(2L)
@@ -78,7 +80,8 @@ class UserPointServiceUnitTest {
             updateMillis = 10000L,
         )
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
 
         `when`(
             mockUserPointTable.selectById(3L)
@@ -86,6 +89,9 @@ class UserPointServiceUnitTest {
         `when`(
             mockUserPointTable.insertOrUpdate(3L, 4L)
         ).thenReturn(UserPoint(3L, 4L, 20000L))
+        `when`(
+            mockPointHistoryTable.insert(3L, 3L, TransactionType.CHARGE, 20000L)
+        ).thenReturn(PointHistory(1L, 3L, TransactionType.CHARGE, 4L, 20000L))
 
         // when
         val userPoint = userPointService.chargeUserPoint(3L, 3L)
@@ -94,6 +100,8 @@ class UserPointServiceUnitTest {
         assertThat(userPoint.id).isEqualTo(3L)
         assertThat(userPoint.point).isEqualTo(4L)
         assertThat(userPoint.updateMillis).isEqualTo(20000L)
+        verify(mockPointHistoryTable, times(1))
+            .insert(3L, 3L, TransactionType.CHARGE, 20000L)
     }
 
     @Test
@@ -101,7 +109,8 @@ class UserPointServiceUnitTest {
     fun chargeNotExistingUserPoint() {
         // given
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
 
         `when`(
             mockUserPointTable.selectById(4L)
@@ -109,6 +118,9 @@ class UserPointServiceUnitTest {
         `when`(
             mockUserPointTable.insertOrUpdate(4L, 999L)
         ).thenReturn(UserPoint(4L, 999L, 20000L))
+        `when`(
+            mockPointHistoryTable.insert(4L, 999L, TransactionType.CHARGE, 20000L)
+        ).thenReturn(PointHistory(2L, 4L, TransactionType.CHARGE, 999L, 20000L))
 
         // when
         val userPoint = userPointService.chargeUserPoint(4L, 999L)
@@ -117,6 +129,8 @@ class UserPointServiceUnitTest {
         assertThat(userPoint.id).isEqualTo(4L)
         assertThat(userPoint.point).isEqualTo(999L)
         assertThat(userPoint.updateMillis).isEqualTo(20000L)
+        verify(mockPointHistoryTable, times(1))
+            .insert(4L, 999L, TransactionType.CHARGE, 20000L)
     }
 
     @ParameterizedTest
@@ -125,7 +139,8 @@ class UserPointServiceUnitTest {
     fun chargeZeroPoint(amount: Long) {
         // given
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
             mockUserPointTable.selectById(5L)
         ).thenReturn(UserPoint(5L, 0L, 10000L))
@@ -155,13 +170,17 @@ class UserPointServiceUnitTest {
             updateMillis = 10000L,
         )
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
             mockUserPointTable.selectById(6L)
         ).thenReturn(stubUser)
         `when`(
             mockUserPointTable.insertOrUpdate(6L, 0L)
         ).thenReturn(UserPoint(6L, 0L, 20000L))
+        `when`(
+            mockPointHistoryTable.insert(6L, 100L, TransactionType.USE, 20000L)
+        ).thenReturn(PointHistory(3L, 6L, TransactionType.USE, 100L, 20000L))
 
         // when
         val userPoint = userPointService.reduceUserPoint(6L, 100L)
@@ -170,6 +189,8 @@ class UserPointServiceUnitTest {
         assertThat(userPoint.id).isEqualTo(6L)
         assertThat(userPoint.point).isEqualTo(0L)
         assertThat(userPoint.updateMillis).isEqualTo(20000L)
+        verify(mockPointHistoryTable, times(1))
+            .insert(6L, 100L, TransactionType.USE, 20000L)
     }
 
     @Test
@@ -182,7 +203,8 @@ class UserPointServiceUnitTest {
             updateMillis = 10000L,
         )
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
             mockUserPointTable.selectById(7L)
         ).thenReturn(stubUser)
@@ -202,7 +224,8 @@ class UserPointServiceUnitTest {
     fun reduceZeroOrNegativePointThrowsIllegalArgumentException(amount: Long) {
         // given
         val mockUserPointTable = mock<UserPointTable>()
-        val userPointService = UserPointService(mockUserPointTable)
+        val mockPointHistoryTable = mock<PointHistoryTable>()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
             mockUserPointTable.selectById(8L)
         ).thenReturn(UserPoint(8L, 1000, 10000L))
