@@ -11,6 +11,8 @@ build/
 .idea/workspace.xml
 .idea/libraries/
 .idea/codeStyles/**
+.idea/copilotDiffState.xml
+.idea/misc.xml
 *.iws
 *.iml
 *.ipr
