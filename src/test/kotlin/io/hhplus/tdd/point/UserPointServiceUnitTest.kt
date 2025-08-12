@@ -138,4 +138,79 @@ class UserPointServiceUnitTest {
         // then
         assertThat(exception).message().isEqualTo("충전할 포인트는 양의 정수여야 합니다.")
     }
+
+    /**
+     * UserPointService의 reduceUserPoint 메서드에 대한 테스트들
+     * - 저장된 포인트 이하를 사용하면 포인트가 차감된다.
+     * - 저장된 포인트를 초과해 사용하면 IllegalArgumentException이 발생한다
+     * - 0 이하의 포인트를 사용하는 경우 IllegalArgumentException이 발생한다.
+     */
+    @Test
+    @DisplayName("저장된 포인트 이하를 사용하면 포인트가 차감된다")
+    fun reducePointWithinBalanceDeductsPoint() {
+        // given
+        val stubUser = UserPoint(
+            id = 6L,
+            point = 100L,
+            updateMillis = 10000L,
+        )
+        val mockUserPointTable = mock<UserPointTable>()
+        val userPointService = UserPointService(mockUserPointTable)
+        `when`(
+            mockUserPointTable.selectById(6L)
+        ).thenReturn(stubUser)
+        `when`(
+            mockUserPointTable.insertOrUpdate(6L, 0L)
+        ).thenReturn(UserPoint(6L, 0L, 20000L))
+
+        // when
+        val userPoint = userPointService.reduceUserPoint(6L, 100L)
+
+        // then
+        assertThat(userPoint.id).isEqualTo(6L)
+        assertThat(userPoint.point).isEqualTo(0L)
+        assertThat(userPoint.updateMillis).isEqualTo(20000L)
+    }
+
+    @Test
+    @DisplayName("저장된 포인트를 초과해 사용하면 IllegalArgumentException이 발생한다")
+    fun reducePointExceedingBalanceThrowsIllegalArgumentException() {
+        // given
+        val stubUser = UserPoint(
+            id = 7L,
+            point = 100L,
+            updateMillis = 10000L,
+        )
+        val mockUserPointTable = mock<UserPointTable>()
+        val userPointService = UserPointService(mockUserPointTable)
+        `when`(
+            mockUserPointTable.selectById(7L)
+        ).thenReturn(stubUser)
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            userPointService.reduceUserPoint(7L, 101L)
+        }
+
+        // then
+        assertThat(exception.message).isEqualTo("포인트가 부족합니다. 현재 포인트: 100, 사용하려는 포인트: 101")
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = [0, -1, -100, -999, Long.MIN_VALUE])
+    @DisplayName("0 이하의 포인트를 사용하는 경우 IllegalArgumentException이 발생한다")
+    fun reduceZeroOrNegativePointThrowsIllegalArgumentException(amount: Long) {
+        // given
+        val mockUserPointTable = mock<UserPointTable>()
+        val userPointService = UserPointService(mockUserPointTable)
+        `when`(
+            mockUserPointTable.selectById(8L)
+        ).thenReturn(UserPoint(8L, 1000, 10000L))
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            userPointService.reduceUserPoint(8L, amount)
+        }
+        // then
+        assertThat(exception).message().isEqualTo("사용할 포인트는 양의 정수여야 합니다.")
+    }
 }

@@ -19,4 +19,15 @@ class UserPointService(private val userPointTable: UserPointTable) {
                 )
             }
     }
+
+    fun reduceUserPoint(userId: Long, point: Long): UserPoint {
+        return userPointTable.selectById(userId)
+            .reduce(point)
+            .run {
+                userPointTable.insertOrUpdate(
+                    id = this.id,
+                    amount = this.point,
+                )
+            }
+    }
 }
