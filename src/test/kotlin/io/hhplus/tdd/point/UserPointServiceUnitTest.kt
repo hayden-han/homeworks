@@ -24,7 +24,7 @@ class UserPointServiceUnitTest {
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
-            mockUserPointTable.selectById(1L)
+            mockUserPointTable.selectById(1L),
         ).thenReturn(UserPoint(id = 1L, point = 0L, updateMillis = 2000L))
 
         // when
@@ -42,17 +42,18 @@ class UserPointServiceUnitTest {
     @DisplayName("테이블에 존재하는 유저의 경우 포인트를 조회할때 저장된 값이 반환된다.")
     fun getExistUserPoint() {
         // given
-        val stubUser = UserPoint(
-            id = 2L,
-            point = 100L,
-            updateMillis = 10000L,
-        )
+        val stubUser =
+            UserPoint(
+                id = 2L,
+                point = 100L,
+                updateMillis = 10000L,
+            )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
 
         `when`(
-            mockUserPointTable.selectById(2L)
+            mockUserPointTable.selectById(2L),
         ).thenReturn(stubUser)
 
         // when
@@ -74,23 +75,24 @@ class UserPointServiceUnitTest {
     @DisplayName("테이블에 존재하는 유저의 경우 포인트를 충전하면 기존 포인트에 충전된 포인트가 더해진다.")
     fun chargeExistingUserPoint() {
         // given
-        val stubUser = UserPoint(
-            id = 3L,
-            point = 1L,
-            updateMillis = 10000L,
-        )
+        val stubUser =
+            UserPoint(
+                id = 3L,
+                point = 1L,
+                updateMillis = 10000L,
+            )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
 
         `when`(
-            mockUserPointTable.selectById(3L)
+            mockUserPointTable.selectById(3L),
         ).thenReturn(stubUser)
         `when`(
-            mockUserPointTable.insertOrUpdate(3L, 4L)
+            mockUserPointTable.insertOrUpdate(3L, 4L),
         ).thenReturn(UserPoint(3L, 4L, 20000L))
         `when`(
-            mockPointHistoryTable.insert(3L, 3L, TransactionType.CHARGE, 20000L)
+            mockPointHistoryTable.insert(3L, 3L, TransactionType.CHARGE, 20000L),
         ).thenReturn(PointHistory(1L, 3L, TransactionType.CHARGE, 4L, 20000L))
 
         // when
@@ -113,13 +115,13 @@ class UserPointServiceUnitTest {
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
 
         `when`(
-            mockUserPointTable.selectById(4L)
+            mockUserPointTable.selectById(4L),
         ).thenReturn(UserPoint(4L, 0L, 10000L))
         `when`(
-            mockUserPointTable.insertOrUpdate(4L, 999L)
+            mockUserPointTable.insertOrUpdate(4L, 999L),
         ).thenReturn(UserPoint(4L, 999L, 20000L))
         `when`(
-            mockPointHistoryTable.insert(4L, 999L, TransactionType.CHARGE, 20000L)
+            mockPointHistoryTable.insert(4L, 999L, TransactionType.CHARGE, 20000L),
         ).thenReturn(PointHistory(2L, 4L, TransactionType.CHARGE, 999L, 20000L))
 
         // when
@@ -142,13 +144,14 @@ class UserPointServiceUnitTest {
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
-            mockUserPointTable.selectById(5L)
+            mockUserPointTable.selectById(5L),
         ).thenReturn(UserPoint(5L, 0L, 10000L))
 
         // when
-        val exception = assertThrows<IllegalArgumentException> {
-            userPointService.chargeUserPoint(5L, amount)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userPointService.chargeUserPoint(5L, amount)
+            }
 
         // then
         assertThat(exception).message().isEqualTo("충전할 포인트는 양의 정수여야 합니다.")
@@ -164,22 +167,23 @@ class UserPointServiceUnitTest {
     @DisplayName("저장된 포인트 이하를 사용하면 포인트가 차감된다")
     fun reducePointWithinBalanceDeductsPoint() {
         // given
-        val stubUser = UserPoint(
-            id = 6L,
-            point = 100L,
-            updateMillis = 10000L,
-        )
+        val stubUser =
+            UserPoint(
+                id = 6L,
+                point = 100L,
+                updateMillis = 10000L,
+            )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
-            mockUserPointTable.selectById(6L)
+            mockUserPointTable.selectById(6L),
         ).thenReturn(stubUser)
         `when`(
-            mockUserPointTable.insertOrUpdate(6L, 0L)
+            mockUserPointTable.insertOrUpdate(6L, 0L),
         ).thenReturn(UserPoint(6L, 0L, 20000L))
         `when`(
-            mockPointHistoryTable.insert(6L, 100L, TransactionType.USE, 20000L)
+            mockPointHistoryTable.insert(6L, 100L, TransactionType.USE, 20000L),
         ).thenReturn(PointHistory(3L, 6L, TransactionType.USE, 100L, 20000L))
 
         // when
@@ -197,22 +201,24 @@ class UserPointServiceUnitTest {
     @DisplayName("저장된 포인트를 초과해 사용하면 IllegalArgumentException이 발생한다")
     fun reducePointExceedingBalanceThrowsIllegalArgumentException() {
         // given
-        val stubUser = UserPoint(
-            id = 7L,
-            point = 100L,
-            updateMillis = 10000L,
-        )
+        val stubUser =
+            UserPoint(
+                id = 7L,
+                point = 100L,
+                updateMillis = 10000L,
+            )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
-            mockUserPointTable.selectById(7L)
+            mockUserPointTable.selectById(7L),
         ).thenReturn(stubUser)
 
         // when
-        val exception = assertThrows<IllegalArgumentException> {
-            userPointService.reduceUserPoint(7L, 101L)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userPointService.reduceUserPoint(7L, 101L)
+            }
 
         // then
         assertThat(exception.message).isEqualTo("포인트가 부족합니다. 현재 포인트: 100, 사용하려는 포인트: 101")
@@ -227,12 +233,13 @@ class UserPointServiceUnitTest {
         val mockPointHistoryTable = mock<PointHistoryTable>()
         val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
         `when`(
-            mockUserPointTable.selectById(8L)
+            mockUserPointTable.selectById(8L),
         ).thenReturn(UserPoint(8L, 1000, 10000L))
         // when
-        val exception = assertThrows<IllegalArgumentException> {
-            userPointService.reduceUserPoint(8L, amount)
-        }
+        val exception =
+            assertThrows<IllegalArgumentException> {
+                userPointService.reduceUserPoint(8L, amount)
+            }
         // then
         assertThat(exception).message().isEqualTo("사용할 포인트는 양의 정수여야 합니다.")
     }

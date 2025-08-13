@@ -9,12 +9,14 @@ class UserPointService(
     private val userPointTable: UserPointTable,
     private val pointHistoryTable: PointHistoryTable,
 ) {
-    fun getUserPoint(userId: Long): UserPoint {
-        return userPointTable.selectById(userId)
-    }
+    fun getUserPoint(userId: Long): UserPoint = userPointTable.selectById(userId)
 
-    fun chargeUserPoint(userId: Long, point: Long): UserPoint {
-        return userPointTable.selectById(userId)
+    fun chargeUserPoint(
+        userId: Long,
+        point: Long,
+    ): UserPoint =
+        userPointTable
+            .selectById(userId)
             .charge(point)
             .runCatching {
                 userPointTable.insertOrUpdate(
@@ -29,10 +31,13 @@ class UserPointService(
                     updateMillis = userPoint.updateMillis,
                 )
             }.getOrThrow()
-    }
 
-    fun reduceUserPoint(userId: Long, point: Long): UserPoint {
-        return userPointTable.selectById(userId)
+    fun reduceUserPoint(
+        userId: Long,
+        point: Long,
+    ): UserPoint =
+        userPointTable
+            .selectById(userId)
             .reduce(point)
             .runCatching {
                 userPointTable.insertOrUpdate(
@@ -47,9 +52,6 @@ class UserPointService(
                     updateMillis = userPoint.updateMillis,
                 )
             }.getOrThrow()
-    }
 
-    fun listUserPointHistories(userId: Long): List<PointHistory> {
-        return pointHistoryTable.selectAllByUserId(userId)
-    }
+    fun listUserPointHistories(userId: Long): List<PointHistory> = pointHistoryTable.selectAllByUserId(userId)
 }
