@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point
 
+import io.hhplus.tdd.concurrency.NoOpUserLockManager
 import io.hhplus.tdd.database.PointHistoryTable
 import io.hhplus.tdd.database.UserPointTable
 import org.assertj.core.api.Assertions.assertThat
@@ -8,7 +9,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 
 class UserPointServiceUnitTest {
     /**
@@ -22,7 +26,8 @@ class UserPointServiceUnitTest {
         // given
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(1L),
         ).thenReturn(UserPoint(id = 1L, point = 0L, updateMillis = 2000L))
@@ -50,7 +55,8 @@ class UserPointServiceUnitTest {
             )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
 
         `when`(
             mockUserPointTable.selectById(2L),
@@ -83,8 +89,8 @@ class UserPointServiceUnitTest {
             )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
-
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(3L),
         ).thenReturn(stubUser)
@@ -112,8 +118,8 @@ class UserPointServiceUnitTest {
         // given
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
-
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(4L),
         ).thenReturn(UserPoint(4L, 0L, 10000L))
@@ -142,7 +148,8 @@ class UserPointServiceUnitTest {
         // given
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(5L),
         ).thenReturn(UserPoint(5L, 0L, 10000L))
@@ -175,7 +182,8 @@ class UserPointServiceUnitTest {
             )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(6L),
         ).thenReturn(stubUser)
@@ -209,7 +217,8 @@ class UserPointServiceUnitTest {
             )
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(7L),
         ).thenReturn(stubUser)
@@ -231,7 +240,8 @@ class UserPointServiceUnitTest {
         // given
         val mockUserPointTable = mock<UserPointTable>()
         val mockPointHistoryTable = mock<PointHistoryTable>()
-        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable)
+        val noOpUserLockManager = NoOpUserLockManager()
+        val userPointService = UserPointService(mockUserPointTable, mockPointHistoryTable, noOpUserLockManager)
         `when`(
             mockUserPointTable.selectById(8L),
         ).thenReturn(UserPoint(8L, 1000, 10000L))
