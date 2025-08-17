@@ -18,9 +18,11 @@ class ApiControllerAdvice : ResponseEntityExceptionHandler() {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     @ExceptionHandler(Exception::class)
-    fun handleException(e: Exception): ResponseEntity<ErrorResponse> =
-        ResponseEntity(
+    fun handleException(e: Exception): ResponseEntity<ErrorResponse> {
+        logger.error("Unhandled exception occurred", e)
+        return ResponseEntity(
             ErrorResponse("500", "에러가 발생했습니다."),
             HttpStatus.INTERNAL_SERVER_ERROR,
         )
+    }
 }
