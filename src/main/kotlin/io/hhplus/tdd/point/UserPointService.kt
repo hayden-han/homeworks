@@ -12,9 +12,7 @@ class UserPointService(
     private val userLockManager: UserLockManager,
 ) {
     fun getUserPoint(userId: Long): UserPoint =
-        userLockManager.withUserLock(userId) {
             userPointTable.selectById(userId)
-        }
 
     fun chargeUserPoint(
         userId: Long,
@@ -63,7 +61,5 @@ class UserPointService(
         }
 
     fun listUserPointHistories(userId: Long): List<PointHistory> =
-        userLockManager.withUserLock(userId) {
             pointHistoryTable.selectAllByUserId(userId)
-        }
 }
