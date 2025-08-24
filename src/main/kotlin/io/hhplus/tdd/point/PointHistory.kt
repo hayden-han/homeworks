@@ -14,5 +14,6 @@ data class PointHistory(
  * - USE : 사용
  */
 enum class TransactionType {
-    CHARGE, USE
+    CHARGE,
+    USE,
 }
