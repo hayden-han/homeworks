@@ -18,7 +18,7 @@ class UserPointService(
         userId: Long,
         point: Long,
     ): UserPoint =
-        userLockManager.executeWithLock(userId) {
+        userLockManager.execute(userId) {
             userPointTable
                 .selectById(userId)
                 .charge(point)
@@ -41,7 +41,7 @@ class UserPointService(
         userId: Long,
         point: Long,
     ): UserPoint =
-        userLockManager.executeWithLock(userId) {
+        userLockManager.execute(userId) {
             userPointTable
                 .selectById(userId)
                 .reduce(point)

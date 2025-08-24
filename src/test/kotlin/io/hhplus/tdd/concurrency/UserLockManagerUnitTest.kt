@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.concurrent.*
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 기능확인을 위한 단위 테스트
@@ -29,7 +31,7 @@ class UserLockManagerUnitTest {
 
         // 선행 스레드가 먼저 락을 잡고 다른 스레드들이 큐에 차례로 대기하도록 유도
         pool.submit {
-            manager.executeWithLock(userId) {
+            manager.execute(userId) {
                 leaderStarted.countDown()
                 leaderRelease.await(5, TimeUnit.SECONDS)
             }
@@ -42,7 +44,7 @@ class UserLockManagerUnitTest {
         // 시작 순서를 보장하기 위해 약간의 간격을 두고 제출(공정 락이 큐 순서 보장)
         repeat(n) { i ->
             pool.submit {
-                manager.executeWithLock(userId) {
+                manager.execute(userId) {
                     acquireOrder.add(i)
                 }
             }
@@ -66,7 +68,7 @@ class UserLockManagerUnitTest {
 
         val tasks = (0 until 6).map {
             pool.submit(Callable {
-                manager.executeWithLock(userId) {
+                manager.execute(userId) {
                     // 일부 작업 시간을 두어 큐가 형성되도록 함
                     Thread.sleep(10)
                 }
@@ -91,13 +93,13 @@ class UserLockManagerUnitTest {
         val release = CountDownLatch(1)
 
         pool.submit {
-            manager.executeWithLock(1L) {
+            manager.execute(1L) {
                 entered1.countDown()
                 release.await(3, TimeUnit.SECONDS)
             }
         }
         pool.submit {
-            manager.executeWithLock(2L) {
+            manager.execute(2L) {
                 entered2.countDown()
                 release.await(3, TimeUnit.SECONDS)
             }
@@ -117,8 +119,8 @@ class UserLockManagerUnitTest {
         val manager = UserLockManager()
         val userId = 300L
 
-        manager.executeWithLock(userId) {
-            manager.executeWithLock(userId) {
+        manager.execute(userId) {
+            manager.execute(userId) {
                 // 재진입 시도
                 Thread.sleep(5)
             }
@@ -126,5 +128,52 @@ class UserLockManagerUnitTest {
 
         val map = lockMapOf(manager)
         assertFalse(map.containsKey(userId), "재진입 후에도 락이 맵에서 제거되지 않음")
+    }
+
+    @Test
+    fun `락 해제와 새로운 획득이 동시에 일어나도 안전하다`() {
+        val manager = UserLockManager()
+        val userId = 400L
+        val pool = Executors.newFixedThreadPool(10)
+        val iterations = 100
+        val successCount = AtomicInteger(0)
+        val errors = CopyOnWriteArrayList<Exception>()
+
+        repeat(iterations) {
+            val barrier = CyclicBarrier(2)
+
+            // 스레드 1: 락을 획득하고 즉시 해제
+            val f1 = pool.submit {
+                try {
+                    barrier.await()
+                    manager.execute(userId) {
+                        // 빠르게 완료
+                    }
+                } catch (e: Exception) {
+                    errors.add(e)
+                }
+            }
+
+            // 스레드 2: 동시에 같은 userId로 락 획득 시도
+            val f2 = pool.submit {
+                try {
+                    barrier.await()
+                    manager.execute(userId) {
+                        successCount.incrementAndGet()
+                    }
+                } catch (e: Exception) {
+                    errors.add(e)
+                }
+            }
+
+            f1.get(1, TimeUnit.SECONDS)
+            f2.get(1, TimeUnit.SECONDS)
+        }
+
+        pool.shutdown()
+        assertTrue(pool.awaitTermination(5, TimeUnit.SECONDS))
+
+        assertTrue(errors.isEmpty(), "예외가 발생했습니다: ${errors.firstOrNull()}")
+        assertEquals(iterations, successCount.get(), "모든 작업이 성공적으로 완료되어야 합니다")
     }
 }

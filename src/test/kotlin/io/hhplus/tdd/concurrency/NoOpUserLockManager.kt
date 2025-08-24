@@ -6,5 +6,5 @@ package io.hhplus.tdd.concurrency
  * It is useful for unit tests where locking behavior is not required.
  */
 class NoOpUserLockManager : UserLockManager() {
-    override fun <T> executeWithLock(userId: Long, block: () -> T): T = block()
+    override fun <T> execute(userId: Long, block: () -> T): T = block()
 }
